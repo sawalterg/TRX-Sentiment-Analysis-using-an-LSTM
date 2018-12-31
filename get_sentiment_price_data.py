@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 # Select cryptocurrency 
 crypto = 'tron'
-start_date, end_date = '20180101', '20181231'       
+start_date, end_date = '20170101', '20181231'       
 
 url = 'https://coinmarketcap.com/currencies/{0}/historical-data/?start={1}&end={2}'.format(crypto, start_date, end_date)
   
@@ -111,4 +111,6 @@ merged_df['target'] = merged_df.Close.shift(-1)
 # Make final csv
 
 merged_df.to_csv('sent_price_file.csv', sep = ',')
+
+
 
