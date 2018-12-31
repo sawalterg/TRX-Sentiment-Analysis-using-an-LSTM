@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 
 
 # Select cryptocurrency 
-crypto = 'vechain'
-start_date, end_date = '20170101', '20181230'       
+crypto = 'tron'
+start_date, end_date = '20180101', '20181231'       
 
 url = 'https://coinmarketcap.com/currencies/{0}/historical-data/?start={1}&end={2}'.format(crypto, start_date, end_date)
   
@@ -19,14 +19,14 @@ table = soup.find('table', {'class': 'table'})
 table_form = [[td.text.strip() for td in tr.findChildren('td')] 
         for tr in table.findChildren('tr')]
 
-df_vet = pd.DataFrame(table_form)
-df_vet.drop(df_vet.index[0], inplace=True) # first row is empty
-df_vet[0] =  pd.to_datetime(df_vet[0]) # date
+df_crypt = pd.DataFrame(table_form)
+df_crypt.drop(df_crypt.index[0], inplace=True) # remove the missing first row
+df_crypt[0] =  pd.to_datetime(df_crypt[0]) # convert to datetime format
 for i in range(1,7):
-    df_vet[i] = pd.to_numeric(df_vet[i].str.replace(",","").str.replace("-","")) # some vol is missing and has -
-df_vet.columns = ['Date','Open','High','Low','Close','Volume','Market Cap']
-df_vet.set_index('Date',inplace=True)
-df_vet.sort_index(inplace=True)
+    df_crypt[i] = pd.to_numeric(df_crypt[i].str.replace(",","").str.replace("-","")) # replace missing volume
+df_crypt.columns = ['Date','Open','High','Low','Close','Volume','Market Cap']
+df_crypt.set_index('Date',inplace=True)
+df_crypt.sort_index(inplace=True)
 
 
 
@@ -53,7 +53,7 @@ dict = { "title":[],
 
 # Pull last 100000 posts regarding cryptocurrency of choice
 
-for submission in reddit.subreddit(crypto).top(limit=10000):
+for submission in reddit.subreddit('Tronix').top(limit=10000):
     dict["title"].append(submission.title)
     dict['subreddit'].append(submission.subreddit)
     dict["score"].append(submission.score)
@@ -77,7 +77,7 @@ reddit_df[['polarity', 'subjectivity']] = reddit_df['title'].apply(lambda Text: 
 
 # Retrieve relevent columns
 
-reddit_df_ex = reddit_df[['created_utc', 'polarity']]
+reddit_df_ex = reddit_df[['created_utc', 'polarity', 'subjectivity']]
 
 # Switch to index for resampling to a day
 
@@ -97,15 +97,18 @@ grouped_df = grouped_df.reset_index()
 
 # Create new index
 
-df_vet = df_vet.reset_index()
+df_crypt = df_crypt.reset_index()
 
 
 
-merged_df = pd.merge(df_vet, grouped_df, left_on = 'Date', right_on = 'created_utc', how = 'inner')
+merged_df = pd.merge(df_crypt, grouped_df, left_on = 'Date', right_on = 'created_utc', how = 'inner')
 
-merged_df = merged_df[['Date', 'Open', 'polarity' ]]
+merged_df = merged_df[['Date', 'Close', 'Volume', 'polarity', 'subjectivity' ]]
+
+merged_df['target'] = merged_df.Close.shift(-1)
 
 
 # Make final csv
 
 merged_df.to_csv('sent_price_file.csv', sep = ',')
+
