@@ -12,7 +12,6 @@ from keras.layers import LSTM
 import seaborn as sns
 import numpy as np
 from collections import deque
-from sklearn.preprocessing import RobustScaler
 import random
 from sklearn.preprocessing import RobustScaler
 
